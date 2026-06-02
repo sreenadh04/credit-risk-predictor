@@ -35,3 +35,6 @@ httpx==0.27.0
 
 # Linting / quality
 ruff==0.4.8
+
+
+setuptools<81
