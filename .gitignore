@@ -39,10 +39,7 @@ htmlcov/
 mlruns/
 
 # Model artifacts (large binaries — not committed to git)
-artifacts/*.joblib
 artifacts/*.png
-artifacts/metrics.json
-artifacts/feature_names.json
 
 # Logs
 logs/
