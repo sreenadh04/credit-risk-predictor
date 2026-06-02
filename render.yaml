@@ -1,0 +1,37 @@
+services:
+  # FastAPI backend
+  - type: web
+    name: credit-risk-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT --workers 1
+    envVars:
+      - key: LOG_LEVEL
+        value: INFO
+      - key: MLFLOW_TRACKING_URI
+        value: /opt/render/project/src/mlruns
+    healthCheckPath: /health
+    autoDeploy: true
+    plan: free
+
+  # Streamlit frontend
+  - type: web
+    name: credit-risk-ui
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: >
+      streamlit run app/streamlit_app.py
+      --server.port=$PORT
+      --server.address=0.0.0.0
+      --server.headless=true
+      --browser.gatherUsageStats=false
+    envVars:
+      - key: FASTAPI_BASE_URL
+        fromService:
+          name: credit-risk-api
+          type: web
+          property: host
+      - key: LOG_LEVEL
+        value: INFO
+    autoDeploy: true
+    plan: free

@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./logs:/app/logs
+      - ./data:/app/data
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - LOG_LEVEL=INFO
+      - MLFLOW_TRACKING_URI=/app/mlruns
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  streamlit:
+    build: .
+    command: >
+      streamlit run app/streamlit_app.py
+      --server.port=8501
+      --server.address=0.0.0.0
+      --server.headless=true
+      --browser.gatherUsageStats=false
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./logs:/app/logs
+      - ./data:/app/data
+    environment:
+      - FASTAPI_BASE_URL=http://api:8000
+      - LOG_LEVEL=INFO
+    depends_on:
+      api:
+        condition: service_healthy
+
+  mlflow:
+    image: python:3.12-slim
+    command: >
+      sh -c "pip install mlflow && mlflow ui --host 0.0.0.0 --port 5000 --backend-store-uri /mlruns"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
