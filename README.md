@@ -5,9 +5,8 @@
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B)](https://streamlit.io)
 [![XGBoost](https://img.shields.io/badge/Model-XGBoost-orange)](https://xgboost.readthedocs.io)
 [![MLflow](https://img.shields.io/badge/MLOps-MLflow-blue)](https://mlflow.org)
-[![CI](https://github.com/YOUR_USERNAME/credit-risk-predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/credit-risk-predictor/actions)
 
-A **production-grade multi-class credit risk classification system** that classifies loan applicants into four risk tiers using 60+ credit bureau behavioral signals, backed by a FastAPI REST API and an interactive Streamlit dashboard with SHAP-powered explanations.
+A **multi-class credit risk classification system** that classifies loan applicants into four risk tiers using 60+ credit bureau behavioral signals, backed by a FastAPI REST API and an interactive Streamlit dashboard with SHAP-powered explanations.
 
 ---
 
