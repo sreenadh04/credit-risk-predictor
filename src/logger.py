@@ -20,7 +20,7 @@ def get_logger(name: str, log_file: Path | None = None) -> logging.Logger:
 
     logger = logging.getLogger(name)
 
-    if logger.handlers:           # avoid duplicate handlers on re-import
+    if logger.handlers:  # avoid duplicate handlers on re-import
         return logger
 
     logger.setLevel(getattr(logging, LOG_LEVEL.upper(), logging.INFO))
@@ -39,6 +39,8 @@ def get_logger(name: str, log_file: Path | None = None) -> logging.Logger:
         fh.setFormatter(formatter)
         logger.addHandler(fh)
     except OSError:
-        logger.warning("Could not create log file at %s; logging to console only.", target)
+        logger.warning(
+            "Could not create log file at %s; logging to console only.", target
+        )
 
     return logger

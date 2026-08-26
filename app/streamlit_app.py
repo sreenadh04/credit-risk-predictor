@@ -8,11 +8,13 @@ Backend logic, API calls, payload generation unchanged.
 import sys
 from pathlib import Path
 
+import plotly.graph_objects as go
 import requests
 import streamlit as st
-import plotly.graph_objects as go
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from config.settings import FASTAPI_BASE_URL, RISK_DESCRIPTIONS  # noqa: E402
 
 st.set_page_config(
     page_title="CreditIQ — Risk Intelligence Platform",
@@ -21,35 +23,59 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-from config.settings import FASTAPI_BASE_URL, RISK_DESCRIPTIONS
 RISK_CONFIG = RISK_DESCRIPTIONS
 
 # ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 PALETTE = {
-    "bg":       "#0F172A",
-    "card":     "#1E293B",
-    "card2":    "#162032",
-    "border":   "#334155",
-    "blue":     "#3B82F6",
+    "bg": "#0F172A",
+    "card": "#1E293B",
+    "card2": "#162032",
+    "border": "#334155",
+    "blue": "#3B82F6",
     "blue_dim": "#1D4ED8",
-    "green":    "#22C55E",
-    "yellow":   "#EAB308",
-    "orange":   "#F97316",
-    "red":      "#EF4444",
-    "text":     "#F8FAFC",
-    "muted":    "#94A3B8",
-    "subtle":   "#475569",
+    "green": "#22C55E",
+    "yellow": "#EAB308",
+    "orange": "#F97316",
+    "red": "#EF4444",
+    "text": "#F8FAFC",
+    "muted": "#94A3B8",
+    "subtle": "#475569",
 }
 
 RISK_COLORS = {
-    "P1": {"text": "#4ade80", "bg": "#052e16", "border": "#16a34a", "bar": "#22c55e", "glow": "rgba(34,197,94,0.15)"},
-    "P2": {"text": "#fde047", "bg": "#1c1a05", "border": "#ca8a04", "bar": "#eab308", "glow": "rgba(234,179,8,0.15)"},
-    "P3": {"text": "#fb923c", "bg": "#1a0a00", "border": "#c2410c", "bar": "#f97316", "glow": "rgba(249,115,22,0.15)"},
-    "P4": {"text": "#f87171", "bg": "#1c0505", "border": "#b91c1c", "bar": "#ef4444", "glow": "rgba(239,68,68,0.15)"},
+    "P1": {
+        "text": "#4ade80",
+        "bg": "#052e16",
+        "border": "#16a34a",
+        "bar": "#22c55e",
+        "glow": "rgba(34,197,94,0.15)",
+    },
+    "P2": {
+        "text": "#fde047",
+        "bg": "#1c1a05",
+        "border": "#ca8a04",
+        "bar": "#eab308",
+        "glow": "rgba(234,179,8,0.15)",
+    },
+    "P3": {
+        "text": "#fb923c",
+        "bg": "#1a0a00",
+        "border": "#c2410c",
+        "bar": "#f97316",
+        "glow": "rgba(249,115,22,0.15)",
+    },
+    "P4": {
+        "text": "#f87171",
+        "bg": "#1c0505",
+        "border": "#b91c1c",
+        "bar": "#ef4444",
+        "glow": "rgba(239,68,68,0.15)",
+    },
 }
 
 # ─── GLOBAL CSS ───────────────────────────────────────────────────────────────
-st.markdown(f"""
+st.markdown(
+    f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Syne:wght@700;800&display=swap');
 
@@ -406,7 +432,9 @@ hr {{
     .block-container {{ padding: 0 0.75rem 4rem 0.75rem !important; }}
 }}
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
 # ─── API HELPERS (unchanged) ──────────────────────────────────────────────────
@@ -422,10 +450,13 @@ def call_api(endpoint: str, payload: dict) -> dict | None:
 def call_api_directly(raw_input: dict, explain: bool = False):
     if explain:
         from src.inference.predict import explain_prediction
+
         return explain_prediction(raw_input, top_n=10)
     from src.inference.predict import predict
+
     label, confidence, all_probs = predict(raw_input)
     from config.settings import RISK_DESCRIPTIONS
+
     return {
         "predicted_class": label,
         "confidence": confidence,
@@ -436,7 +467,8 @@ def call_api_directly(raw_input: dict, explain: bool = False):
 
 # ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("""
+    st.markdown(
+        """
 <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.25rem;">
   <span style="font-size:1.4rem">🏦</span>
   <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;
@@ -449,10 +481,15 @@ with st.sidebar:
             margin-bottom:1.2rem;padding-left:2rem;">
   Risk Intelligence Platform
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
     st.divider()
-    st.markdown('<p style="font-size:0.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#475569;margin-bottom:0.6rem;">System Status</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p style="font-size:0.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#475569;margin-bottom:0.6rem;">System Status</p>',
+        unsafe_allow_html=True,
+    )
 
     api_ok = model_ok = False
     metrics = {}
@@ -465,7 +502,8 @@ with st.sidebar:
     except Exception:
         pass
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
 <div class="sb-status">
   <span class="{'sb-dot-green' if api_ok else 'sb-dot-red'}">●</span>
   <span style="color:#94a3b8;font-size:0.8rem;">API</span>
@@ -482,54 +520,84 @@ with st.sidebar:
     {'LOADED' if model_ok else 'STANDBY'}
   </span>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
     st.divider()
-    st.markdown('<p style="font-size:0.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#475569;margin-bottom:0.8rem;">Quick Metrics</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p style="font-size:0.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#475569;margin-bottom:0.8rem;">Quick Metrics</p>',
+        unsafe_allow_html=True,
+    )
 
-    acc  = f"{metrics.get('test_accuracy', 0.77):.1%}" if metrics else "77.0%"
-    f1   = f"{metrics.get('macro_f1', 0.0):.3f}"       if metrics else "—"
-    rec  = f"{metrics.get('p3_recall', 0.0):.3f}"      if metrics else "—"
+    acc = f"{metrics.get('test_accuracy', 0.77):.1%}" if metrics else "77.0%"
+    f1 = f"{metrics.get('macro_f1', 0.0):.3f}" if metrics else "—"
+    rec = f"{metrics.get('p3_recall', 0.0):.3f}" if metrics else "—"
 
-    for label_txt, val, clr in [("Accuracy", acc, "#93C5FD"), ("Macro F1", f1, "#86EFAC"), ("P3 Recall", rec, "#FCA5A5")]:
-        st.markdown(f"""
+    for label_txt, val, clr in [
+        ("Accuracy", acc, "#93C5FD"),
+        ("Macro F1", f1, "#86EFAC"),
+        ("P3 Recall", rec, "#FCA5A5"),
+    ]:
+        st.markdown(
+            f"""
 <div style="display:flex;justify-content:space-between;align-items:center;
             padding:0.45rem 0;border-bottom:1px solid #1e293b;">
   <span style="font-size:0.78rem;color:#64748b;">{label_txt}</span>
   <span style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;
                font-weight:600;color:{clr};">{val}</span>
 </div>
-""", unsafe_allow_html=True)
+""",
+            unsafe_allow_html=True,
+        )
 
     st.divider()
-    st.markdown('<p style="font-size:0.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#475569;margin-bottom:0.8rem;">Risk Classes</p>', unsafe_allow_html=True)
-    for cls, lbl, clr in [("P1","Very Low","#4ade80"),("P2","Low","#fde047"),("P3","High","#fb923c"),("P4","Very High","#f87171")]:
-        st.markdown(f"""
+    st.markdown(
+        '<p style="font-size:0.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#475569;margin-bottom:0.8rem;">Risk Classes</p>',
+        unsafe_allow_html=True,
+    )
+    for cls, lbl, clr in [
+        ("P1", "Very Low", "#4ade80"),
+        ("P2", "Low", "#fde047"),
+        ("P3", "High", "#fb923c"),
+        ("P4", "Very High", "#f87171"),
+    ]:
+        st.markdown(
+            f"""
 <div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;">
   <span style="color:{clr};font-size:0.65rem;">■</span>
   <span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;
                font-weight:600;color:{clr};">{cls}</span>
   <span style="font-size:0.75rem;color:#64748b;">— {lbl} Risk</span>
 </div>
-""", unsafe_allow_html=True)
+""",
+            unsafe_allow_html=True,
+        )
 
     st.divider()
     show_explanation = st.toggle("🔬 SHAP Explanation", value=False)
-    st.markdown('<p style="font-size:0.68rem;color:#475569;margin-top:0.3rem;">Enable feature-level AI explainability</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p style="font-size:0.68rem;color:#475569;margin-top:0.3rem;">Enable feature-level AI explainability</p>',
+        unsafe_allow_html=True,
+    )
 
     st.divider()
-    st.markdown("""
+    st.markdown(
+        """
 <div style="font-size:0.7rem;color:#334155;line-height:1.7;">
   <div>⚡ XGBoost · Class-weighted</div>
   <div>📊 60+ credit bureau features</div>
   <div>🔍 SHAP explainability layer</div>
   <div>🚀 FastAPI · Streamlit stack</div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
 
 # ─── HERO SECTION ─────────────────────────────────────────────────────────────
-st.markdown("""
+st.markdown(
+    """
 <div class="hero-section">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
     <div>
@@ -557,14 +625,17 @@ st.markdown("""
     </div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ─── KPI CARDS ────────────────────────────────────────────────────────────────
 acc_val = f"{metrics.get('test_accuracy', 0.77):.1%}" if metrics else "77.0%"
-f1_val  = f"{metrics.get('macro_f1', 0.0):.3f}"       if metrics else "—"
-rec_val = f"{metrics.get('p3_recall', 0.0):.3f}"      if metrics else "—"
+f1_val = f"{metrics.get('macro_f1', 0.0):.3f}" if metrics else "—"
+rec_val = f"{metrics.get('p3_recall', 0.0):.3f}" if metrics else "—"
 
-st.markdown(f"""
+st.markdown(
+    f"""
 <div class="kpi-grid">
   <div class="kpi-card kpi-blue">
     <div class="kpi-icon">🎯</div>
@@ -587,141 +658,234 @@ st.markdown(f"""
     <div class="kpi-label">Input Features</div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ─── INPUT SECTION ────────────────────────────────────────────────────────────
-st.markdown('<p class="sec-title">Customer Profile & Financial Data</p>', unsafe_allow_html=True)
+st.markdown(
+    '<p class="sec-title">Customer Profile & Financial Data</p>', unsafe_allow_html=True
+)
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "👤  Demographics",
-    "💳  Credit History",
-    "⚠️  Delinquencies",
-    "🔍  Enquiries",
-    "🏷️  Products",
-])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    [
+        "👤  Demographics",
+        "💳  Credit History",
+        "⚠️  Delinquencies",
+        "🔍  Enquiries",
+        "🏷️  Products",
+    ]
+)
 
 with tab1:
     c1, c2, c3 = st.columns(3)
     with c1:
-        age      = st.number_input("Age (years)", 21, 70, 34)
-        income   = st.number_input("Net Monthly Income (₹)", 5000, 500000, 45000, step=1000,
-                                   help="Take-home salary after tax deductions")
+        age = st.number_input("Age (years)", 21, 70, 34)
+        income = st.number_input(
+            "Net Monthly Income (₹)",
+            5000,
+            500000,
+            45000,
+            step=1000,
+            help="Take-home salary after tax deductions",
+        )
     with c2:
-        gender   = st.selectbox("Gender", ["M", "F"])
-        marital  = st.selectbox("Marital Status", ["Married", "Single"])
+        gender = st.selectbox("Gender", ["M", "F"])
+        marital = st.selectbox("Marital Status", ["Married", "Single"])
     with c3:
-        education = st.selectbox("Education Level", [
-            "SSC", "12TH", "UNDER GRADUATE", "GRADUATE",
-            "POST-GRADUATE", "PROFESSIONAL", "OTHERS"
-        ])
-        employer  = st.number_input("Months with Current Employer", 0, 120, 36,
-                                    help="Employment stability indicator")
+        education = st.selectbox(
+            "Education Level",
+            [
+                "SSC",
+                "12TH",
+                "UNDER GRADUATE",
+                "GRADUATE",
+                "POST-GRADUATE",
+                "PROFESSIONAL",
+                "OTHERS",
+            ],
+        )
+        employer = st.number_input(
+            "Months with Current Employer",
+            0,
+            120,
+            36,
+            help="Employment stability indicator",
+        )
 
 with tab2:
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown('<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Account Counts</p>', unsafe_allow_html=True)
-        total_tl       = st.slider("Total Credit Accounts (ever)", 0, 50, 12)
-        tot_active     = st.slider("Active Accounts", 0, 30, 8)
-        tot_closed     = st.slider("Closed Accounts", 0, 30, 4)
+        st.markdown(
+            '<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Account Counts</p>',
+            unsafe_allow_html=True,
+        )
+        total_tl = st.slider("Total Credit Accounts (ever)", 0, 50, 12)
+        tot_active = st.slider("Active Accounts", 0, 30, 8)
+        tot_closed = st.slider("Closed Accounts", 0, 30, 4)
     with c2:
-        st.markdown('<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Account Age & Activity</p>', unsafe_allow_html=True)
-        age_oldest     = st.number_input("Age of Oldest Account (months)", 0, 300, 72)
-        age_newest     = st.number_input("Age of Newest Account (months)", 0, 120, 6)
-        tl_opened_l6m  = st.number_input("Accounts Opened — Last 6M", 0, 10, 1)
+        st.markdown(
+            '<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Account Age & Activity</p>',
+            unsafe_allow_html=True,
+        )
+        age_oldest = st.number_input("Age of Oldest Account (months)", 0, 300, 72)
+        age_newest = st.number_input("Age of Newest Account (months)", 0, 120, 6)
+        tl_opened_l6m = st.number_input("Accounts Opened — Last 6M", 0, 10, 1)
         tl_opened_l12m = st.number_input("Accounts Opened — Last 12M", 0, 20, 2)
 
 with tab3:
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown('<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Missed Payments</p>', unsafe_allow_html=True)
-        tot_missed      = st.number_input("Total Missed Payments", 0, 30, 0)
-        time_since_pay  = st.number_input("Months Since Last Payment", 0, 48, 1)
-        num_deliq       = st.number_input("Total Times Delinquent", 0, 20, 0)
+        st.markdown(
+            '<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Missed Payments</p>',
+            unsafe_allow_html=True,
+        )
+        tot_missed = st.number_input("Total Missed Payments", 0, 30, 0)
+        time_since_pay = st.number_input("Months Since Last Payment", 0, 48, 1)
+        num_deliq = st.number_input("Total Times Delinquent", 0, 20, 0)
     with c2:
-        st.markdown('<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Days Past Due</p>', unsafe_allow_html=True)
-        num_30dpd       = st.number_input("Times 30+ Days Past Due", 0, 15, 0)
-        num_60dpd       = st.number_input("Times 60+ Days Past Due", 0, 10, 0)
-        max_deliq_level = st.selectbox("Max Delinquency Level", [0, 1, 2, 3, 4, 5],
-                                       help="0 = none, 5 = loss/write-off")
+        st.markdown(
+            '<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Days Past Due</p>',
+            unsafe_allow_html=True,
+        )
+        num_30dpd = st.number_input("Times 30+ Days Past Due", 0, 15, 0)
+        num_60dpd = st.number_input("Times 60+ Days Past Due", 0, 10, 0)
+        max_deliq_level = st.selectbox(
+            "Max Delinquency Level",
+            [0, 1, 2, 3, 4, 5],
+            help="0 = none, 5 = loss/write-off",
+        )
 
 with tab4:
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown('<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Total Enquiries</p>', unsafe_allow_html=True)
-        tot_enq  = st.number_input("Total Enquiries (ever)", 0, 30, 5)
+        st.markdown(
+            '<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Total Enquiries</p>',
+            unsafe_allow_html=True,
+        )
+        tot_enq = st.number_input("Total Enquiries (ever)", 0, 30, 5)
         enq_l12m = st.number_input("Enquiries — Last 12M", 0, 20, 3)
     with c2:
-        st.markdown('<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Recent Enquiries</p>', unsafe_allow_html=True)
-        enq_l6m  = st.number_input("Enquiries — Last 6M", 0, 15, 1)
-        enq_l3m  = st.number_input("Enquiries — Last 3M", 0, 10, 0)
+        st.markdown(
+            '<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.5rem;">Recent Enquiries</p>',
+            unsafe_allow_html=True,
+        )
+        enq_l6m = st.number_input("Enquiries — Last 6M", 0, 15, 1)
+        enq_l3m = st.number_input("Enquiries — Last 3M", 0, 10, 0)
         enq_since = st.number_input("Months Since Last Enquiry", 0, 36, 2)
 
 with tab5:
-    st.markdown('<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.8rem;">Active Credit Products</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.8rem;">Active Credit Products</p>',
+        unsafe_allow_html=True,
+    )
     pc1, pc2, pc3, pc4 = st.columns(4)
-    cc_flag = pc1.checkbox("💳 Credit Card",   value=True)
+    cc_flag = pc1.checkbox("💳 Credit Card", value=True)
     pl_flag = pc2.checkbox("💰 Personal Loan", value=True)
-    hl_flag = pc3.checkbox("🏠 Home Loan",     value=False)
-    gl_flag = pc4.checkbox("🥇 Gold Loan",     value=False)
+    hl_flag = pc3.checkbox("🏠 Home Loan", value=False)
+    gl_flag = pc4.checkbox("🥇 Gold Loan", value=False)
 
-    st.markdown('<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin:1rem 0 0.5rem 0;">Enquiry History</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p style="font-size:0.75rem;color:#64748b;font-weight:600;margin:1rem 0 0.5rem 0;">Enquiry History</p>',
+        unsafe_allow_html=True,
+    )
     ec1, ec2 = st.columns(2)
     with ec1:
-        last_prod  = st.selectbox("Most Recent Product Enquired",
-            ["PL", "CC", "ConsumerLoan", "HL", "AL", "others"])
+        last_prod = st.selectbox(
+            "Most Recent Product Enquired",
+            ["PL", "CC", "ConsumerLoan", "HL", "AL", "others"],
+        )
     with ec2:
-        first_prod = st.selectbox("First Product Enquired",
-            ["CC", "PL", "ConsumerLoan", "HL", "AL", "others"])
+        first_prod = st.selectbox(
+            "First Product Enquired", ["CC", "PL", "ConsumerLoan", "HL", "AL", "others"]
+        )
 
 
 # ─── PAYLOAD BUILDER (unchanged logic) ────────────────────────────────────────
 def build_payload() -> dict:
     return {
-        "Total_TL": total_tl, "Tot_Closed_TL": tot_closed, "Tot_Active_TL": tot_active,
-        "Total_TL_opened_L6M": tl_opened_l6m, "Tot_TL_closed_L6M": 0,
-        "pct_tl_open_L6M":   (tl_opened_l6m  / (total_tl + 1)) * 100,
+        "Total_TL": total_tl,
+        "Tot_Closed_TL": tot_closed,
+        "Tot_Active_TL": tot_active,
+        "Total_TL_opened_L6M": tl_opened_l6m,
+        "Tot_TL_closed_L6M": 0,
+        "pct_tl_open_L6M": (tl_opened_l6m / (total_tl + 1)) * 100,
         "pct_tl_closed_L6M": 0.0,
-        "pct_active_tl":     (tot_active / (total_tl + 1)) * 100,
-        "pct_closed_tl":     (tot_closed / (total_tl + 1)) * 100,
-        "Total_TL_opened_L12M": tl_opened_l12m, "Tot_TL_closed_L12M": 0,
-        "pct_tl_open_L12M":  (tl_opened_l12m / (total_tl + 1)) * 100,
+        "pct_active_tl": (tot_active / (total_tl + 1)) * 100,
+        "pct_closed_tl": (tot_closed / (total_tl + 1)) * 100,
+        "Total_TL_opened_L12M": tl_opened_l12m,
+        "Tot_TL_closed_L12M": 0,
+        "pct_tl_open_L12M": (tl_opened_l12m / (total_tl + 1)) * 100,
         "pct_tl_closed_L12M": 0.0,
         "Tot_Missed_Pmnt": tot_missed,
-        "Auto_TL": 1, "CC_TL": int(cc_flag), "Consumer_TL": 0,
-        "Gold_TL": int(gl_flag), "Home_TL": int(hl_flag), "PL_TL": int(pl_flag),
+        "Auto_TL": 1,
+        "CC_TL": int(cc_flag),
+        "Consumer_TL": 0,
+        "Gold_TL": int(gl_flag),
+        "Home_TL": int(hl_flag),
+        "PL_TL": int(pl_flag),
         "Secured_TL": int(hl_flag) + int(gl_flag),
-        "Unsecured_TL": int(cc_flag) + int(pl_flag), "Other_TL": 1,
-        "Age_Oldest_TL": age_oldest, "Age_Newest_TL": age_newest,
+        "Unsecured_TL": int(cc_flag) + int(pl_flag),
+        "Other_TL": 1,
+        "Age_Oldest_TL": age_oldest,
+        "Age_Newest_TL": age_newest,
         "time_since_recent_payment": float(time_since_pay),
-        "time_since_first_deliquency":  None if num_deliq == 0 else 24.0,
+        "time_since_first_deliquency": None if num_deliq == 0 else 24.0,
         "time_since_recent_deliquency": None if num_deliq == 0 else 6.0,
-        "num_times_delinquent": num_deliq, "max_delinquency_level": max_deliq_level,
+        "num_times_delinquent": num_deliq,
+        "max_delinquency_level": max_deliq_level,
         "max_recent_level_of_deliq": max_deliq_level,
-        "num_deliq_6mts": 0, "num_deliq_12mts": num_deliq, "num_deliq_6_12mts": 0,
-        "max_deliq_6mts": 0, "max_deliq_12mts": max_deliq_level,
-        "num_times_30p_dpd": num_30dpd, "num_times_60p_dpd": num_60dpd,
-        "num_std": max(0, total_tl - num_deliq), "num_std_6mts": 1, "num_std_12mts": 2,
-        "num_sub": 0, "num_sub_6mts": 0, "num_sub_12mts": 0,
-        "num_dbt": 0, "num_dbt_6mts": 0, "num_dbt_12mts": 0,
-        "num_lss": 0, "num_lss_6mts": 0, "num_lss_12mts": 0,
+        "num_deliq_6mts": 0,
+        "num_deliq_12mts": num_deliq,
+        "num_deliq_6_12mts": 0,
+        "max_deliq_6mts": 0,
+        "max_deliq_12mts": max_deliq_level,
+        "num_times_30p_dpd": num_30dpd,
+        "num_times_60p_dpd": num_60dpd,
+        "num_std": max(0, total_tl - num_deliq),
+        "num_std_6mts": 1,
+        "num_std_12mts": 2,
+        "num_sub": 0,
+        "num_sub_6mts": 0,
+        "num_sub_12mts": 0,
+        "num_dbt": 0,
+        "num_dbt_6mts": 0,
+        "num_dbt_12mts": 0,
+        "num_lss": 0,
+        "num_lss_6mts": 0,
+        "num_lss_12mts": 0,
         "recent_level_of_deliq": max_deliq_level,
-        "tot_enq": float(tot_enq), "CC_enq": 2.0, "CC_enq_L6m": 1.0, "CC_enq_L12m": 2.0,
-        "PL_enq": 2.0, "PL_enq_L6m": 0.0, "PL_enq_L12m": 1.0,
+        "tot_enq": float(tot_enq),
+        "CC_enq": 2.0,
+        "CC_enq_L6m": 1.0,
+        "CC_enq_L12m": 2.0,
+        "PL_enq": 2.0,
+        "PL_enq_L6m": 0.0,
+        "PL_enq_L12m": 1.0,
         "time_since_recent_enq": float(enq_since),
-        "enq_L12m": float(enq_l12m), "enq_L6m": float(enq_l6m), "enq_L3m": float(enq_l3m),
-        "MARITALSTATUS": marital, "EDUCATION": education,
-        "AGE": age, "GENDER": gender, "NETMONTHLYINCOME": float(income),
+        "enq_L12m": float(enq_l12m),
+        "enq_L6m": float(enq_l6m),
+        "enq_L3m": float(enq_l3m),
+        "MARITALSTATUS": marital,
+        "EDUCATION": education,
+        "AGE": age,
+        "GENDER": gender,
+        "NETMONTHLYINCOME": float(income),
         "Time_With_Curr_Empr": employer,
-        "pct_of_active_TLs_ever":     (tot_active / (total_tl + 1)) * 100,
+        "pct_of_active_TLs_ever": (tot_active / (total_tl + 1)) * 100,
         "pct_opened_TLs_L6m_of_L12m": (tl_opened_l6m / (tl_opened_l12m + 1)) * 100,
         "pct_currentBal_all_TL": 45.0,
-        "CC_Flag": int(cc_flag), "PL_Flag": int(pl_flag),
-        "HL_Flag": int(hl_flag), "GL_Flag": int(gl_flag),
-        "pct_PL_enq_L6m_of_L12m": 0.0, "pct_CC_enq_L6m_of_L12m": 50.0,
-        "pct_PL_enq_L6m_of_ever": 0.0, "pct_CC_enq_L6m_of_ever": 50.0,
+        "CC_Flag": int(cc_flag),
+        "PL_Flag": int(pl_flag),
+        "HL_Flag": int(hl_flag),
+        "GL_Flag": int(gl_flag),
+        "pct_PL_enq_L6m_of_L12m": 0.0,
+        "pct_CC_enq_L6m_of_L12m": 50.0,
+        "pct_PL_enq_L6m_of_ever": 0.0,
+        "pct_CC_enq_L6m_of_ever": 50.0,
         "max_unsec_exposure_inPct": 60.0,
-        "last_prod_enq2": last_prod, "first_prod_enq2": first_prod,
+        "last_prod_enq2": last_prod,
+        "first_prod_enq2": first_prod,
     }
 
 
@@ -733,7 +897,7 @@ with btn_col:
 
 # ─── RESULTS ──────────────────────────────────────────────────────────────────
 if predict_btn:
-    payload  = build_payload()
+    payload = build_payload()
     endpoint = "/predict/explain" if show_explanation else "/predict"
 
     with st.spinner("Analysing credit profile…"):
@@ -742,7 +906,9 @@ if predict_btn:
             try:
                 result = call_api_directly(payload, explain=show_explanation)
             except FileNotFoundError:
-                st.error("Model not found. Please run: `python -m src.training.train_pipeline`")
+                st.error(
+                    "Model not found. Please run: `python -m src.training.train_pipeline`"
+                )
                 st.stop()
             except Exception as e:
                 st.error(f"Prediction failed: {e}")
@@ -750,21 +916,24 @@ if predict_btn:
                 st.stop()
 
     if result:
-        label      = result["predicted_class"]
+        label = result["predicted_class"]
         confidence = result["confidence"]
-        all_probs  = result["all_probs"]
-        cfg        = RISK_CONFIG[label]
-        clr        = RISK_COLORS.get(label, RISK_COLORS["P1"])
-        conf_pct   = int(confidence * 100)
+        all_probs = result["all_probs"]
+        cfg = RISK_CONFIG[label]
+        clr = RISK_COLORS.get(label, RISK_COLORS["P1"])
+        conf_pct = int(confidence * 100)
 
-        st.markdown('<br>', unsafe_allow_html=True)
-        st.markdown('<p class="sec-title">Assessment Result</p>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(
+            '<p class="sec-title">Assessment Result</p>', unsafe_allow_html=True
+        )
 
         res_col1, res_col2 = st.columns([1, 1.4], gap="large")
 
         # ── Risk Classification Card ──────────────────────────────────────
         with res_col1:
-            st.markdown(f"""
+            st.markdown(
+                f"""
 <div style="
     background: linear-gradient(145deg, {clr['bg']}, #0F172A);
     border: 1.5px solid {clr['border']};
@@ -833,39 +1002,50 @@ if predict_btn:
     {cfg['action']}
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+                unsafe_allow_html=True,
+            )
 
         # ── Probability Chart ─────────────────────────────────────────────
         with res_col2:
-            classes   = ["P1", "P2", "P3", "P4"]
-            xlabels   = ["P1 · Very Low", "P2 · Low", "P3 · High", "P4 · Very High"]
-            probs     = [all_probs.get(k, 0) for k in classes]
-            bar_clrs  = [RISK_COLORS[k]["bar"] for k in classes]
+            classes = ["P1", "P2", "P3", "P4"]
+            xlabels = ["P1 · Very Low", "P2 · Low", "P3 · High", "P4 · Very High"]
+            probs = [all_probs.get(k, 0) for k in classes]
+            bar_clrs = [RISK_COLORS[k]["bar"] for k in classes]
             opacities = [1.0 if k == label else 0.3 for k in classes]
             line_clrs = [RISK_COLORS[k]["border"] for k in classes]
 
             fig = go.Figure()
-            for i, (x, y, bc, op, lc) in enumerate(zip(xlabels, probs, bar_clrs, opacities, line_clrs)):
-                fig.add_trace(go.Bar(
-                    x=[x], y=[y],
-                    marker=dict(color=bc, opacity=op, line=dict(color=lc, width=1.5)),
-                    text=[f"{y:.1%}"],
-                    textposition="outside",
-                    textfont=dict(
-                        color="#f1f5f9" if classes[i] == label else "#475569",
-                        size=12,
-                        family="JetBrains Mono"
-                    ),
-                    hovertemplate=f"<b>{x}</b><br>Prob: {y:.2%}<extra></extra>",
-                    showlegend=False,
-                ))
+            for i, (x, y, bc, op, lc) in enumerate(
+                zip(xlabels, probs, bar_clrs, opacities, line_clrs)
+            ):
+                fig.add_trace(
+                    go.Bar(
+                        x=[x],
+                        y=[y],
+                        marker=dict(
+                            color=bc, opacity=op, line=dict(color=lc, width=1.5)
+                        ),
+                        text=[f"{y:.1%}"],
+                        textposition="outside",
+                        textfont=dict(
+                            color="#f1f5f9" if classes[i] == label else "#475569",
+                            size=12,
+                            family="JetBrains Mono",
+                        ),
+                        hovertemplate=f"<b>{x}</b><br>Prob: {y:.2%}<extra></extra>",
+                        showlegend=False,
+                    )
+                )
 
             # Highlight selected
             sel_idx = classes.index(label)
             fig.add_shape(
                 type="rect",
-                x0=sel_idx - 0.4, x1=sel_idx + 0.4,
-                y0=0, y1=probs[sel_idx] * 1.05,
+                x0=sel_idx - 0.4,
+                x1=sel_idx + 0.4,
+                y0=0,
+                y1=probs[sel_idx] * 1.05,
                 line=dict(color=RISK_COLORS[label]["border"], width=2, dash="dot"),
                 fillcolor="rgba(0,0,0,0)",
                 layer="above",
@@ -902,13 +1082,14 @@ if predict_btn:
             st.plotly_chart(fig, use_container_width=True)
 
         # ── Key Risk Signal Chips ─────────────────────────────────────────
-        st.markdown('<br>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<p class="sec-title">Key Risk Signals</p>', unsafe_allow_html=True)
 
         def risk_class(val, threshold=0):
             return "signal-warn" if val > threshold else "signal-safe"
 
-        st.markdown(f"""
+        st.markdown(
+            f"""
 <div class="signal-grid">
   <div class="signal-chip {risk_class(num_deliq)}">
     <div class="s-val">{num_deliq}</div>
@@ -927,29 +1108,40 @@ if predict_btn:
     <div class="s-lbl">60+ DPD Events</div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+            unsafe_allow_html=True,
+        )
 
         # ── SHAP Explanation ──────────────────────────────────────────────
         if show_explanation and "top_features" in result:
-            st.markdown('<br>', unsafe_allow_html=True)
-            st.markdown('<p class="sec-title">SHAP Feature Attribution</p>', unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown(
+                '<p class="sec-title">SHAP Feature Attribution</p>',
+                unsafe_allow_html=True,
+            )
 
-            features   = result["top_features"]
-            feat_names = [f["feature"]    for f in features]
-            shap_vals  = [f["shap_value"] for f in features]
-            directions = [f["direction"]  for f in features]
+            features = result["top_features"]
+            feat_names = [f["feature"] for f in features]
+            shap_vals = [f["shap_value"] for f in features]
+            directions = [f["direction"] for f in features]
 
             # Interactive Plotly chart
-            bar_colors = ["#ef4444" if d == "increases_risk" else "#22c55e" for d in directions]
+            bar_colors = [
+                "#ef4444" if d == "increases_risk" else "#22c55e" for d in directions
+            ]
             max_abs = max(abs(v) for v in shap_vals) if shap_vals else 1
 
             # Ranked cards list
             shap_html = ""
             for i, (fn, sv, d) in enumerate(zip(feat_names, shap_vals, directions)):
-                clr2   = "#ef4444" if d == "increases_risk" else "#22c55e"
-                bg2    = "rgba(239,68,68,0.08)" if d == "increases_risk" else "rgba(34,197,94,0.08)"
-                pct    = min(abs(sv) / max_abs * 100, 100)
-                icon   = "↑" if d == "increases_risk" else "↓"
+                clr2 = "#ef4444" if d == "increases_risk" else "#22c55e"
+                bg2 = (
+                    "rgba(239,68,68,0.08)"
+                    if d == "increases_risk"
+                    else "rgba(34,197,94,0.08)"
+                )
+                pct = min(abs(sv) / max_abs * 100, 100)
+                icon = "↑" if d == "increases_risk" else "↓"
                 shap_html += f"""
 <div class="shap-row" style="border-left:3px solid {clr2};">
   <span class="shap-rank">#{i+1:02d}</span>
@@ -963,21 +1155,23 @@ if predict_btn:
             st.markdown(shap_html, unsafe_allow_html=True)
 
             # Interactive chart
-            st.markdown('<br>', unsafe_allow_html=True)
-            fig2 = go.Figure(go.Bar(
-                x=shap_vals[::-1],
-                y=feat_names[::-1],
-                orientation="h",
-                marker=dict(
-                    color=bar_colors[::-1],
-                    line=dict(color=bar_colors[::-1], width=0.5),
-                    opacity=0.85,
-                ),
-                text=[f"{v:+.3f}" for v in shap_vals[::-1]],
-                textposition="outside",
-                textfont=dict(color="#94a3b8", size=10, family="JetBrains Mono"),
-                hovertemplate="<b>%{y}</b><br>SHAP: %{x:+.4f}<extra></extra>",
-            ))
+            st.markdown("<br>", unsafe_allow_html=True)
+            fig2 = go.Figure(
+                go.Bar(
+                    x=shap_vals[::-1],
+                    y=feat_names[::-1],
+                    orientation="h",
+                    marker=dict(
+                        color=bar_colors[::-1],
+                        line=dict(color=bar_colors[::-1], width=0.5),
+                        opacity=0.85,
+                    ),
+                    text=[f"{v:+.3f}" for v in shap_vals[::-1]],
+                    textposition="outside",
+                    textfont=dict(color="#94a3b8", size=10, family="JetBrains Mono"),
+                    hovertemplate="<b>%{y}</b><br>SHAP: %{x:+.4f}<extra></extra>",
+                )
+            )
             fig2.update_layout(
                 title=dict(
                     text=f"Feature Impact on Predicted Class: {label}",
@@ -987,8 +1181,11 @@ if predict_btn:
                 xaxis=dict(
                     title="← Decreases Risk  |  SHAP Value  |  Increases Risk →",
                     title_font=dict(size=10, color="#475569", family="DM Sans"),
-                    gridcolor="#1e293b", color="#64748b",
-                    zeroline=True, zerolinecolor="#475569", zerolinewidth=1.5,
+                    gridcolor="#1e293b",
+                    color="#64748b",
+                    zeroline=True,
+                    zerolinecolor="#475569",
+                    zerolinewidth=1.5,
                     tickfont=dict(size=9, color="#64748b", family="JetBrains Mono"),
                 ),
                 yaxis=dict(
@@ -1005,7 +1202,8 @@ if predict_btn:
             st.plotly_chart(fig2, use_container_width=True)
 
             # Legend
-            st.markdown("""
+            st.markdown(
+                """
 <div style="display:flex;gap:1.5rem;margin-top:0.5rem;">
   <div style="display:flex;align-items:center;gap:0.4rem;">
     <div style="width:12px;height:12px;background:#ef4444;border-radius:2px;"></div>
@@ -1016,4 +1214,6 @@ if predict_btn:
     <span style="font-size:0.75rem;color:#94a3b8;">Reduces credit risk</span>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+                unsafe_allow_html=True,
+            )

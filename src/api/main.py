@@ -56,11 +56,13 @@ app.add_middleware(
 
 # ─── Startup ─────────────────────────────────────────────────────────────────
 
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("FastAPI startup — warming up model...")
     try:
         from src.inference.predict import load_model
+
         load_model()
         logger.info("Model loaded and cached successfully.")
     except FileNotFoundError:
@@ -68,6 +70,7 @@ async def startup_event():
 
 
 # ─── Exception Handlers ──────────────────────────────────────────────────────
+
 
 @app.exception_handler(FileNotFoundError)
 async def file_not_found_handler(request: Request, exc: FileNotFoundError):
@@ -87,6 +90,7 @@ async def generic_handler(request: Request, exc: Exception):
 
 
 # ─── Endpoints ───────────────────────────────────────────────────────────────
+
 
 @app.get(
     "/health",
